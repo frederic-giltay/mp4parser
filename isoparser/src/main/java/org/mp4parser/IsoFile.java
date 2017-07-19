@@ -57,6 +57,10 @@ public class IsoFile extends BasicContainer implements Closeable {
         initContainer(readableByteChannel, -1, boxParser);
     }
 
+    public IsoFile(ReadableByteChannel readableByteChannel, long fileSize) throws IOException {
+        this(new SizeAwareReadableByteChannel(readableByteChannel, fileSize));
+    }
+
     public static byte[] fourCCtoBytes(String fourCC) {
         byte[] result = new byte[4];
         if (fourCC != null) {
