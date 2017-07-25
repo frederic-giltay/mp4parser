@@ -19,6 +19,7 @@ package org.mp4parser.boxes.sampleentry;
 import org.mp4parser.BoxParser;
 import org.mp4parser.Container;
 import org.mp4parser.boxes.iso14496.part12.ProtectionSchemeInformationBox;
+import org.mp4parser.tools.ByteBufferByteChannel;
 import org.mp4parser.tools.IsoTypeReader;
 import org.mp4parser.tools.IsoTypeWriter;
 import org.mp4parser.tools.Utf8;
@@ -152,7 +153,8 @@ public final class VisualSampleEntry extends AbstractSampleEntry implements Cont
     @Override
     public void parse(final ReadableByteChannel dataSource, ByteBuffer header, long contentSize, BoxParser boxParser) throws IOException {
 
-        ByteBuffer content = ByteBuffer.allocate(78);
+        ByteBuffer content = ByteBuffer.allocate((int)contentSize);
+        //ByteBuffer content = ByteBuffer.allocate(78);
         dataSource.read(content);
         content.position(6);
         dataReferenceIndex = IsoTypeReader.readUInt16(content);
@@ -189,8 +191,8 @@ public final class VisualSampleEntry extends AbstractSampleEntry implements Cont
         assert 0xFFFF == tmp;
 
 
-        initContainer(dataSource, contentSize - 78, boxParser);
-
+        initContainer(new ByteBufferByteChannel(content), contentSize - 78, boxParser);
+        //initContainer(dataSource, contentSize - 78, boxParser);
     }
 
 

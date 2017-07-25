@@ -102,7 +102,7 @@ public class BasicContainer implements Container {
     public void initContainer(ReadableByteChannel readableByteChannel, long containerSize, BoxParser boxParser) throws IOException {
         long contentProcessed = 0;
 
-        while (containerSize < 0 || contentProcessed < containerSize) {
+        while (containerSize < 0 || contentProcessed+8 < containerSize) {
             try {
                 ParsableBox b = boxParser.parseBox(readableByteChannel, (this instanceof ParsableBox) ? ((ParsableBox) this).getType() : null);
                 boxes.add(b);

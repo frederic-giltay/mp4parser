@@ -38,8 +38,10 @@ public class ByteBufferByteChannel implements ByteChannel {
         if (byteBuffer.remaining() <= 0) {
             return -1;
         }
-        dst.put((ByteBuffer) byteBuffer.duplicate().limit(byteBuffer.position() + dst.remaining()));
-        byteBuffer.position(byteBuffer.position() + rem);
+        int newLimit = Math.min(byteBuffer.capacity(), byteBuffer.position() + dst.remaining());
+        dst.put((ByteBuffer) byteBuffer.duplicate().limit(newLimit));
+        int newPosition = Math.min(byteBuffer.capacity(), byteBuffer.position() + dst.position());
+        byteBuffer.position(newPosition);
         return rem;
     }
 
