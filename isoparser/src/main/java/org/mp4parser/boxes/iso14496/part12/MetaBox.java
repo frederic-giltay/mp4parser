@@ -18,6 +18,7 @@ package org.mp4parser.boxes.iso14496.part12;
 
 import org.mp4parser.BoxParser;
 import org.mp4parser.support.AbstractContainerBox;
+import org.mp4parser.tools.ByteBufferByteChannel;
 import org.mp4parser.tools.IsoTypeReader;
 import org.mp4parser.tools.IsoTypeWriter;
 
@@ -33,6 +34,8 @@ import java.nio.channels.WritableByteChannel;
  */
 public class MetaBox extends AbstractContainerBox {
     public static final String TYPE = "meta";
+
+    private boolean isFullBox = true; // default is fullbox cause that's what ISO defines, simple box is apple specifc
 
     private int version;
     private int flags;
@@ -76,25 +79,42 @@ public class MetaBox extends AbstractContainerBox {
 
     @Override
     public void parse(ReadableByteChannel dataSource, ByteBuffer header, long contentSize, BoxParser boxParser) throws IOException {
-        ByteBuffer bb = ByteBuffer.allocate(4);
+        ByteBuffer bb = ByteBuffer.allocate(8);
         dataSource.read(bb);
-        parseVersionAndFlags((ByteBuffer) bb.rewind());
-        initContainer(dataSource, contentSize - 4, boxParser);
+        bb.position(4);
+        String isHdlr = IsoTypeReader.read4cc(bb);
+        if ("hdlr".equals(isHdlr)) {
+            // we got apple specifc box herei
+            isFullBox = false;
+            ByteBuffer bb2 = ByteBuffer.allocate((int)contentSize);
+            bb.position(0);
+            bb2.put(bb);
+            dataSource.read(bb2);
+            bb2.position(0);
+            initContainer(new ByteBufferByteChannel(bb2), contentSize, boxParser);
+        } else {
+            isFullBox = true;
+            parseVersionAndFlags((ByteBuffer) bb.rewind());
+            initContainer(dataSource, contentSize - 4, boxParser);
+        }
+
     }
 
     @Override
     public void getBox(WritableByteChannel writableByteChannel) throws IOException {
         writableByteChannel.write(getHeader());
-        ByteBuffer bb = ByteBuffer.allocate(4);
-        writeVersionAndFlags(bb);
-        writableByteChannel.write((ByteBuffer) bb.rewind());
+        if (isFullBox) {
+            ByteBuffer bb = ByteBuffer.allocate(4);
+            writeVersionAndFlags(bb);
+            writableByteChannel.write((ByteBuffer)bb.rewind());
+        }
         writeContainer(writableByteChannel);
     }
 
     @Override
     public long getSize() {
         long s = getContainerSize();
-        long t = 4; // bytes to container start
+        long t = isFullBox?4:0; // bytes to container start
         return s + t + ((largeBox || (s + t) >= (1L << 32)) ? 16 : 8);
 
     }

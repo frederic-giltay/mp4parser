@@ -93,7 +93,13 @@ public abstract class AbstractBox implements ParsableBox {
      */
     @DoNotParseDetail
     public void parse(ReadableByteChannel dataSource, ByteBuffer header, long contentSize, BoxParser boxParser) throws IOException {
-        content = ByteBuffer.allocate(l2i(contentSize));
+        try {
+            content = ByteBuffer.allocate(l2i(contentSize));
+        }
+        catch (OutOfMemoryError e) {
+            System.err.println("Error allocating ByteBuffer of size "+contentSize);
+            throw e;
+        }
 
         while ((content.position() < contentSize)) {
             if (dataSource.read(content) == -1) {
